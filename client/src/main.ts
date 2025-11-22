@@ -6,6 +6,7 @@ import LobbyScene from './scenes/LobbyScene';
 import GameScene from './scenes/GameScene';
 import ResultsScene from './scenes/ResultsScene';
 import BackgroundScene from './scenes/BackgroundScene';
+import SocialHubScene from './scenes/SocialHubScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -28,7 +29,8 @@ const config: Phaser.Types.Core.GameConfig = {
         HostJoinScene,
         LobbyScene,
         GameScene,
-        ResultsScene
+        ResultsScene,
+        SocialHubScene // Register SocialHubScene
     ]
 };
 

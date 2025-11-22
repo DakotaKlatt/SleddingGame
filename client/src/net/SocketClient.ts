@@ -27,6 +27,10 @@ class SocketClient {
         this.socket.on(event, callback);
     }
 
+    public once(event: string, callback: (...args: any[]) => void) {
+        this.socket.once(event, callback);
+    }
+
     public off(event: string) {
         this.socket.off(event);
     }
@@ -41,4 +45,3 @@ class SocketClient {
 }
 
 export default SocketClient.getInstance();
-

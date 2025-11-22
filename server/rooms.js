@@ -11,7 +11,17 @@ function generateRoomCode() {
 }
 
 function createRoom(hostId, mode = 'race', options = {}) {
-    const code = generateRoomCode();
+    // Allow explicit code if provided (e.g. for 'VILLAGE')
+    const code = options.code || generateRoomCode();
+    
+    if (rooms[code]) {
+        // Room already exists (e.g. VILLAGE was created by someone else first)
+        // If it's the village, we might just return it? 
+        // But usually createRoom implies ownership. 
+        // For village, we treat it as a shared persistent room.
+        if (code === 'VILLAGE') return rooms[code];
+    }
+
     rooms[code] = {
         code,
         mode,
@@ -33,9 +43,22 @@ function getRoom(code) {
 }
 
 function joinRoom(code, player) {
-    const room = rooms[code];
+    let room = rooms[code];
+    
+    // Auto-create village if it doesn't exist
+    if (!room && code === 'VILLAGE') {
+        room = createRoom(player.id, 'hub', { 
+            code: 'VILLAGE', 
+            maxPlayers: 50, 
+            isSolo: false 
+        });
+    }
+
     if (!room) return { error: 'Room not found' };
-    if (room.started) return { error: 'Game already started' };
+    
+    // Allow joining started games for Hub
+    if (room.started && code !== 'VILLAGE') return { error: 'Game already started' };
+    
     if (Object.keys(room.players).length >= room.options.maxPlayers) return { error: 'Room full' };
 
     room.players[player.id] = {
@@ -43,9 +66,9 @@ function joinRoom(code, player) {
         name: player.name || `Player ${Object.keys(room.players).length + 1}`,
         isHost: player.id === room.hostId,
         cosmetics: {
-            character: 'char_default',
-            sled: 'sled_wood',
-            hat: 'hat_beanie'
+            character: '🏂', // Default emoji
+            sled: '🛷',     // Default emoji
+            hat: '🧢'      // Default emoji
         },
         state: {} // Position, rotation, etc.
     };
@@ -60,7 +83,8 @@ function leaveRoom(code, playerId) {
     delete room.players[playerId];
     
     // If host leaves, assign new host or close room
-    if (room.players.length === 0) {
+    // For VILLAGE, we don't close it unless empty (or never close it effectively)
+    if (Object.keys(room.players).length === 0) {
         delete rooms[code];
     } else if (room.hostId === playerId) {
         const remainingIds = Object.keys(room.players);

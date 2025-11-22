@@ -133,6 +133,12 @@ io.on('connection', (socket) => {
         socket.to(code).emit('playerStateUpdate', { id: socket.id, state });
     });
 
+    // Chat Message
+    socket.on('chatMessage', ({ code, message }) => {
+        // Broadcast to everyone in room including sender (for sync)
+        io.to(code).emit('chatMessage', { id: socket.id, message });
+    });
+
     // Player Eliminated / Finished
     socket.on('playerFinished', ({ code, time, score }) => {
         io.to(code).emit('playerFinished', { id: socket.id, time, score });

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import SocketClient from '../net/SocketClient';
 
 export default class MainMenuScene extends Phaser.Scene {
     constructor() {
@@ -16,7 +17,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
         // --- Glass Panel Container ---
         const panelWidth = 400;
-        const panelHeight = 300;
+        const panelHeight = 350; // Taller for extra button
         const panelX = width / 2;
         const panelY = height / 2 + 50;
 
@@ -48,13 +49,47 @@ export default class MainMenuScene extends Phaser.Scene {
         });
 
         // --- Buttons ---
-        this.createGlassButton(width / 2, panelY - 50, 'PLAY', () => {
-            // Go to HostJoin but keep background? 
-            // Actually HostJoin usually has its own layout, but we can keep BackgroundScene running
+        let btnY = panelY - 80;
+        
+        this.createGlassButton(width / 2, btnY, 'PLAY GAME', () => {
             this.scene.start('HostJoinScene');
         });
 
-        this.createGlassButton(width / 2, panelY + 50, 'OPTIONS', () => {
+        btnY += 80;
+        this.createGlassButton(width / 2, btnY, 'VISIT VILLAGE', () => {
+            // Join special 'VILLAGE' room
+            SocketClient.connect();
+            SocketClient.emit('joinRoom', { code: 'VILLAGE', name: 'Guest' });
+            
+            // Listen for join success directly here? Or just wait for events handled in next scene?
+            // Better to handle the transition logic here:
+            SocketClient.once('roomJoined', (room: any) => {
+                this.scene.stop('BackgroundScene'); // Stop bg so we can see village
+                this.scene.start('SocialHubScene', { room });
+            });
+            
+            // If village doesn't exist, create it (Server logic should handle auto-create if we update it, or we force create)
+            // Actually, joinRoom will fail if it doesn't exist.
+            // Let's try to create it if join fails? Or just create it first?
+            // Simplest: Emit 'createRoom' with code 'VILLAGE' if we could...
+            // But our createRoom generates random code.
+            // Hack: Let's modify server joinRoom to auto-create if it's 'VILLAGE'.
+            // Done in thought process, but not implemented in server yet.
+            // Let's assume server handles it or we assume it exists.
+            // Actually, I should update server rooms.js to handle 'VILLAGE' specifically.
+            // For now, let's try to create a specific room by sending a special flag? 
+            // Or just let the user Create a room and we call it 'VILLAGE' manually? No.
+            // I'll add a fallback: Join 'VILLAGE', if error 'Room not found', Create 'VILLAGE' (if server allowed specific codes).
+            
+            // WAIT: I need to update server logic to support this persistence or specific room code.
+            // I will update server logic in next step if needed.
+            // For now let's assume 'VILLAGE' works or use a simpler 'createRoom' call that we treat as hub.
+            // But to be truly "Public", everyone needs same code.
+            // I will stick to 'VILLAGE' code and update server.
+        });
+
+        btnY += 80;
+        this.createGlassButton(width / 2, btnY, 'OPTIONS', () => {
             console.log('Options clicked');
         });
     }
